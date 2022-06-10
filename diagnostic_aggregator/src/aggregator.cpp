@@ -68,6 +68,7 @@ Aggregator::Aggregator()
 {
   RCLCPP_DEBUG(logger_, "constructor");
   bool other_as_errors = false;
+  bool use_transient_local_qos = false;
 
   std::map<std::string, rclcpp::Parameter> parameters;
   if (!n_->get_parameters("", parameters)) {
@@ -84,13 +85,17 @@ Aggregator::Aggregator()
       other_as_errors = param.second.as_bool();
     } else if (param.first.compare("history_depth") == 0) {
       history_depth_ = param.second.as_int();
+    } else if (param.first.compare("subscribe_transient_local") == 0) {
+      use_transient_local_qos = param.second.as_bool();
     }
   }
+
   RCLCPP_DEBUG(logger_, "Aggregator publication rate configured to: %f", pub_rate_);
   RCLCPP_DEBUG(logger_, "Aggregator base path configured to: %s", base_path_.c_str());
   RCLCPP_DEBUG(
     logger_, "Aggregator other_as_errors configured to: %s", (other_as_errors ? "true" : "false"));
-
+  RCLCPP_DEBUG(
+    logger_, "Aggregator use_transient_local_qos configured to: %s", (use_transient_local_qos ? "true" : "false"));
   analyzer_group_ = std::make_unique<AnalyzerGroup>();
   if (!analyzer_group_->init(base_path_, "", n_)) {
     RCLCPP_ERROR(logger_, "Analyzer group for diagnostic aggregator failed to initialize!");
@@ -100,8 +105,13 @@ Aggregator::Aggregator()
   other_analyzer_ = std::make_unique<OtherAnalyzer>(other_as_errors);
   other_analyzer_->init(base_path_);  // This always returns true
 
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(history_depth_));
+  if (use_transient_local_qos) {
+    qos.transient_local();
+  }
+
   diag_sub_ = n_->create_subscription<DiagnosticArray>(
-    "/diagnostics", rclcpp::SystemDefaultsQoS().keep_last(history_depth_),
+    "/diagnostics", qos,
     std::bind(&Aggregator::diagCallback, this, _1));
   agg_pub_ = n_->create_publisher<DiagnosticArray>("/diagnostics_agg", 1);
   toplevel_state_pub_ =
