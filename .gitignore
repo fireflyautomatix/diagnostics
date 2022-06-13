@@ -2,5 +2,6 @@
 *.project
 *.cproject
 *.pydevproject
+.vscode/
 *~ 
 
