@@ -132,7 +132,8 @@ private:
   /// AddDiagnostics, /diagnostics_agg/add_diagnostics
   rclcpp::Service<diagnostic_msgs::srv::AddDiagnostics>::SharedPtr add_srv_;
   /// DiagnosticArray, /diagnostics
-  rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_sub_;
+  /// DiagnosticArray, /diagnostics_stateful
+  rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_sub_, diag_stateful_sub_;
   /// DiagnosticArray, /diagnostics_agg
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr agg_pub_;
   /// DiagnosticStatus, /diagnostics_toplevel_state
