@@ -44,7 +44,7 @@ from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 import rclpy
 from rclpy.clock import ROSClock
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default, QoSDurabilityPolicy
+from rclpy.qos import qos_profile_system_default
 
 PKG = 'diagnostic_aggregator'
 
@@ -53,15 +53,10 @@ class DiagnosticTalker(Node):
 
     def __init__(self):
         super().__init__('diagnostic_talker')
-        self.declare_parameter('publish_transient_local', False)
-        use_transient_local = self.get_parameter('publish_transient_local').get_parameter_value().bool_value
-        qos = qos_profile_system_default
-        if use_transient_local:
-            qos.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
         self.i = 0
         self.pub = self.create_publisher(DiagnosticArray,
                                          '/diagnostics',
-                                         qos)
+                                         qos_profile_system_default)
         timer_period = 1.0
         self.tmr = self.create_timer(timer_period, self.timer_callback)
 

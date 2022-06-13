@@ -6,29 +6,15 @@ import launch_ros.actions
 analyzer_params_filepath = "@ANALYZER_PARAMS_FILEPATH@"
 
 def generate_launch_description():
-    use_transient_local = launch.substitutions.LaunchConfiguration('use_transient_local')
-    argument = launch.actions.DeclareLaunchArgument(
-        'use_transient_local',
-        default_value='False'
-    )
     aggregator = launch_ros.actions.Node(
         package='diagnostic_aggregator',
         executable='aggregator_node',
         output='screen',
-        parameters=[
-            analyzer_params_filepath,
-            {'subscribe_transient_local': use_transient_local}
-        ],
-    )
+        parameters=[analyzer_params_filepath])
     diag_publisher = launch_ros.actions.Node(
         package='diagnostic_aggregator',
-        parameters=[
-            {'publish_transient_local': use_transient_local}
-        ],
-        executable='example_pub.py'
-    )
+        executable='example_pub.py')
     return launch.LaunchDescription([
-        argument,
         aggregator,
         diag_publisher,
         launch.actions.RegisterEventHandler(
