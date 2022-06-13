@@ -6,6 +6,12 @@ import launch_ros.actions
 analyzer_params_filepath = "@ANALYZER_PARAMS_FILEPATH@"
 
 def generate_launch_description():
+    publish_statefully = launch.substitutions.LaunchConfiguration('publish_statefully')
+    declare_publish_statefully = launch.actions.DeclareLaunchArgument(
+        'publish_statefully',
+        default_value='False',
+        description='set to True to set the example publisher to publish to the stateful topic, with stateful qos',
+    )
     aggregator = launch_ros.actions.Node(
         package='diagnostic_aggregator',
         executable='aggregator_node',
@@ -13,8 +19,12 @@ def generate_launch_description():
         parameters=[analyzer_params_filepath])
     diag_publisher = launch_ros.actions.Node(
         package='diagnostic_aggregator',
+        parameters=[
+            {'publish_statefully': publish_statefully}
+        ],
         executable='example_pub.py')
     return launch.LaunchDescription([
+        declare_publish_statefully,
         aggregator,
         diag_publisher,
         launch.actions.RegisterEventHandler(

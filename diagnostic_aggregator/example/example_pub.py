@@ -44,7 +44,7 @@ from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 import rclpy
 from rclpy.clock import ROSClock
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_system_default, QoSDurabilityPolicy
 
 PKG = 'diagnostic_aggregator'
 
@@ -54,9 +54,16 @@ class DiagnosticTalker(Node):
     def __init__(self):
         super().__init__('diagnostic_talker')
         self.i = 0
+        self.declare_parameter('publish_statefully', False)
+        self.stateful = self.get_parameter('publish_statefully').get_parameter_value().bool_value
+        topic_name = 'diagnostics'
+        topic_qos = qos_profile_system_default
+        if self.stateful:
+            topic_name = 'diagnostics_stateful'
+            topic_qos.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
         self.pub = self.create_publisher(DiagnosticArray,
-                                         '/diagnostics',
-                                         qos_profile_system_default)
+                                        topic_name,
+                                        topic_qos)
         timer_period = 1.0
         self.tmr = self.create_timer(timer_period, self.timer_callback)
 
@@ -80,23 +87,33 @@ class DiagnosticTalker(Node):
 
         # Random diagnostics status
         level = random()
-        self.array.status[1].level = DiagnosticStatus.OK
-        self.array.status[1].message = 'OK'
-        self.array.status[3].level = DiagnosticStatus.OK
-        self.array.status[3].message = 'OK'
-        self.array.status[4].level = DiagnosticStatus.OK
-        self.array.status[4].message = 'OK'
+        state_changed = False
         if level > .5:
+            if self.array.status[1].level != DiagnosticStatus.WARN:
+                state_changed = True
             self.array.status[1].level = DiagnosticStatus.WARN
             self.array.status[1].message = 'Warning'
+        else:
+            self.array.status[1].level = DiagnosticStatus.OK
+            self.array.status[1].message = 'OK'
         if level > .7:
+            if self.array.status[3].level != DiagnosticStatus.WARN:
+                state_changed = True
             self.array.status[3].level = DiagnosticStatus.WARN
             self.array.status[3].message = 'Warning'
+        else:
+            self.array.status[3].level = DiagnosticStatus.OK
+            self.array.status[3].message = 'OK'
         if level > .95:
+            if self.array.status[4].level != DiagnosticStatus.ERROR:
+                state_changed = True
             self.array.status[4].level = DiagnosticStatus.ERROR
             self.array.status[4].message = 'Error'
-
-        self.pub.publish(self.array)
+        else:
+            self.array.status[4].level = DiagnosticStatus.OK
+            self.array.status[4].message = 'OK'
+        if (not self.stateful) or state_changed:
+            self.pub.publish(self.array)
 
 
 def main(args=None):
