@@ -107,6 +107,10 @@ Aggregator::Aggregator()
     "/diagnostics_stateful", rclcpp::SystemDefaultsQoS().transient_local().keep_last(history_depth_),
     std::bind(&Aggregator::diagCallback, this, _1));
   agg_pub_ = n_->create_publisher<DiagnosticArray>("/diagnostics_agg", 1);
+  agg_stateful_pub_ = n_->create_publisher<DiagnosticArray>(
+    "/diagnostics_agg_stateful",
+    rclcpp::SystemDefaultsQoS().transient_local().keep_last(1)
+  );
   toplevel_state_pub_ =
     n_->create_publisher<DiagnosticStatus>("/diagnostics_toplevel_state", 1);
 
@@ -204,6 +208,16 @@ void Aggregator::publishData()
       min_level = msg->level;
     }
   }
+
+  // check if we have changed stamp before we populate the stamp
+  // so that we can simply compare messages
+  if (diag_array != previous_aggregation_)
+  {
+    agg_stateful_pub_->publish(diag_array);
+  } else {
+    RCLCPP_DEBUG(logger_, "No change in aggregation, not publishing");
+  }
+  previous_aggregation_ = diag_array;
 
   diag_array.header.stamp = clock_->now();
   agg_pub_->publish(diag_array);
