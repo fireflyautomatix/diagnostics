@@ -116,6 +116,14 @@ if(BUILD_TESTING)
       ENV
     )
   endforeach()
+
+  add_launch_test(
+    "test/test_stateful_aggregation.launch.py"
+    TIMEOUT 30
+    ENV
+      PARAMETER_FILE=${CMAKE_CURRENT_SOURCE_DIR}/test/primitive_analyzers.yaml
+      AGGREGATOR_NODE=${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}/aggregator_node
+  )
 endif()
 
 install(
