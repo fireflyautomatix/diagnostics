@@ -210,17 +210,15 @@ void Aggregator::publishData()
     }
   }
 
-  // check if we have changed stamp before we populate the stamp
-  // so that we can simply compare messages
-  if (diag_array != previous_aggregation_) {
+  diag_array.header.stamp = clock_->now();
+  agg_pub_->publish(diag_array);
+
+  if (diag_array.status != previous_aggregation_.status) {
     agg_stateful_pub_->publish(diag_array);
   } else {
     RCLCPP_DEBUG(logger_, "No change in aggregation, not publishing");
   }
   previous_aggregation_ = diag_array;
-
-  diag_array.header.stamp = clock_->now();
-  agg_pub_->publish(diag_array);
 
   diag_toplevel_state.level = max_level;
   if (max_level < 0 ||
