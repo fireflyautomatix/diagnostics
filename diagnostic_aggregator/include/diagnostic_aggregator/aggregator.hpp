@@ -133,15 +133,19 @@ private:
   rclcpp::Service<diagnostic_msgs::srv::AddDiagnostics>::SharedPtr add_srv_;
   /// DiagnosticArray, /diagnostics
   /// DiagnosticArray, /diagnostics_stateful
-  rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_sub_, diag_stateful_sub_;
+  rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diag_sub_,
+    diag_stateful_sub_;
   /// DiagnosticArray, /diagnostics_agg
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr agg_pub_;
+  /// DiagnosticArray, /diagnostics_agg_stateful
+  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr agg_stateful_pub_;
   /// DiagnosticStatus, /diagnostics_toplevel_state
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr toplevel_state_pub_;
   std::mutex mutex_;
   double pub_rate_;
   int history_depth_;
   rclcpp::Clock::SharedPtr clock_;
+  diagnostic_msgs::msg::DiagnosticArray previous_aggregation_;
 
   /*!
    *\brief Callback for incoming "/diagnostics"

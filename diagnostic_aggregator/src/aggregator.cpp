@@ -104,9 +104,14 @@ Aggregator::Aggregator()
     "/diagnostics", rclcpp::SystemDefaultsQoS().keep_last(history_depth_),
     std::bind(&Aggregator::diagCallback, this, _1));
   diag_sub_ = n_->create_subscription<DiagnosticArray>(
-    "/diagnostics_stateful", rclcpp::SystemDefaultsQoS().transient_local().keep_last(history_depth_),
+    "/diagnostics_stateful", rclcpp::SystemDefaultsQoS().transient_local().keep_last(
+      history_depth_),
     std::bind(&Aggregator::diagCallback, this, _1));
   agg_pub_ = n_->create_publisher<DiagnosticArray>("/diagnostics_agg", 1);
+  agg_stateful_pub_ = n_->create_publisher<DiagnosticArray>(
+    "/diagnostics_agg_stateful",
+    rclcpp::SystemDefaultsQoS().transient_local().keep_last(1)
+  );
   toplevel_state_pub_ =
     n_->create_publisher<DiagnosticStatus>("/diagnostics_toplevel_state", 1);
 
@@ -207,6 +212,13 @@ void Aggregator::publishData()
 
   diag_array.header.stamp = clock_->now();
   agg_pub_->publish(diag_array);
+
+  if (diag_array.status != previous_aggregation_.status) {
+    agg_stateful_pub_->publish(diag_array);
+  } else {
+    RCLCPP_DEBUG(logger_, "No change in aggregation, not publishing");
+  }
+  previous_aggregation_ = diag_array;
 
   diag_toplevel_state.level = max_level;
   if (max_level < 0 ||
